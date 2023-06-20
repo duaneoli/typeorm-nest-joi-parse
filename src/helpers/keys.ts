@@ -1,3 +1,5 @@
+type DefaultObject = Record<string, any>
+
 export function gerarChavesRecursivo(objeto: any, chavePai = ''): any {
   const chaves: { [key: string]: any } = {}
 
@@ -39,41 +41,27 @@ export function verificaChavesExistentes(chaves: { [key: string]: any }, tipo: a
   return true
 }
 
-export function gerarObjetoRecursivo(chaves: { [key: string]: any }, tipo: any): any {
-  const objeto: any = {}
+export function formatRecursiveObject(inputObject: DefaultObject) {
+  const formattedFilterObject: DefaultObject = {}
 
-  for (let chave in chaves) {
-    if (chaves.hasOwnProperty(chave)) {
-      const valor = chaves[chave]
-      const partesChave = chave.split('.')
-      let objetoAtual = objeto
-      let tipoAtual = tipo
+  Object.entries(inputObject).reduce((acc, [key, value]) => {
+    const splittedKey: string[] = key.split('.')
+    let curr: DefaultObject = acc
 
-      let chaveValida = true
-      for (let i = 0; i < partesChave.length; i++) {
-        const parte = partesChave[i]
-
-        if (tipoAtual && parte in tipoAtual) {
-          tipoAtual = tipoAtual[parte]
-          if (i === partesChave.length - 1) {
-            objetoAtual[parte] = valor
-          } else {
-            if (!objetoAtual[parte]) {
-              objetoAtual[parte] = {}
-            }
-            objetoAtual = objetoAtual[parte]
-          }
-        } else {
-          chaveValida = false
-          break
-        }
+    splittedKey.forEach((key, index) => {
+      if (index === splittedKey.length - 1) {
+        // Assign the value to the final key
+        curr[key] = value
+      } else {
+        // Create an empty object if the key doesn't exist
+        curr[key] = curr[key] || {}
+        // Move to the next level of the nested object
+        curr = curr[key]
       }
+    })
 
-      if (chaveValida) {
-        objetoAtual = valor
-      }
-    }
-  }
+    return acc
+  }, formattedFilterObject)
 
-  return objeto
+  return formattedFilterObject
 }
