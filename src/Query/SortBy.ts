@@ -15,7 +15,21 @@ export class SortBy<T extends Record<string, 'ASC' | 'DESC'>> {
     this.genericObject.remove(key)
   }
 
-  get() {
+  get(key: keyof T) {
+    return this.genericObject.get(key) as 'ASC' | 'DESC'
+  }
+
+  getAll() {
     return this.genericObject.getAll()
+  }
+
+  stringify() {
+    return Object.keys(this.getAll()).length
+      ? 'sortBy=' +
+          JSON.stringify(this.getAll())
+            .replace(/"(\w+)":"(\w+)"/g, '$1:$2')
+            .replace(/[{}]/g, '')
+            .replace(/,/g, ';')
+      : ''
   }
 }

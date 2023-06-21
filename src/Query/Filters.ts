@@ -1,13 +1,33 @@
+import { formatArrayToQuery } from '../helpers/types'
 import { Generic } from './Generic'
 
-type EmptyValue = Record<string, any> | Array<any> | string
 type NumberOrDate = number | Date
 type BetweenValue = NumberOrDate | string
 
-type LikeConfig = Partial<{
-  i: boolean // case insensitive
-  at: 'start' | 'end' | 'any' | 'strict'
-}>
+type LikeAt = 'start' | 'end' | 'any' | 'strict'
+
+type Value<T, K extends keyof T> = Array<T[K]> | string | Date | number
+
+type Operator =
+  | 'isEmpty'
+  | 'isNotEmpty'
+  | 'not'
+  | 'lessThan'
+  | 'lessThanOrEqual'
+  | 'moreThan'
+  | 'moreThanOrEqual'
+  | 'equals'
+  | 'between'
+  | 'iLike'
+  | '%iLike'
+  | 'iLike%'
+  | '%iLike%'
+  | 'like'
+  | '%like'
+  | 'like%'
+  | '%like%'
+
+type Filter<T, K extends keyof T> = { value?: Value<T, K>; operator: Operator }
 
 export class Filters<T> {
   private genericObject: Generic<T>
@@ -16,23 +36,27 @@ export class Filters<T> {
     this.genericObject = new Generic(init)
   }
 
-  reset() {
+  clear() {
     this.genericObject.clear()
   }
 
-  clear(key: keyof T) {
+  remove(key: keyof T) {
     this.genericObject.remove(key)
+  }
+
+  format() {
+    return this.genericObject.format()
+  }
+
+  get<K extends keyof T>(key: K) {
+    return this.genericObject.get(key) as { value: Array<T[K]>; operator: Operator }
   }
 
   getAll() {
     return this.genericObject.getAll()
   }
 
-  get(key: keyof T) {
-    return this.genericObject.get(key)
-  }
-
-  add<K extends keyof T>(key: K) {
+  set<K extends keyof T>(key: K) {
     return {
       equals: (...value: Array<T[K]>) => {
         this.equals(key, value)
@@ -40,84 +64,114 @@ export class Filters<T> {
       not: (...value: Array<T[K]>) => {
         this.not(key, value)
       },
-      isEmpty: (value: EmptyValue) => {
-        this.isEmpty(key, value)
+      isEmpty: () => {
+        this.isEmpty(key)
       },
-      isNotEmpty: (value: EmptyValue) => {
-        this.isNotEmpty(key, value)
+      isNotEmpty: () => {
+        this.isNotEmpty(key)
       },
-      lessThan: (value: NumberOrDate) => {
+      lessThan: (...value: Array<NumberOrDate>) => {
         this.lessThan(key, value)
       },
-      lessThanOrEqual: (value: NumberOrDate) => {
+      lessThanOrEqual: (...value: Array<NumberOrDate>) => {
         this.lessThanOrEqual(key, value)
       },
-      moreThan: (value: NumberOrDate) => {
+      moreThan: (...value: Array<NumberOrDate>) => {
         this.moreThan(key, value)
       },
-      moreThanOrEqual: (value: NumberOrDate) => {
+      moreThanOrEqual: (...value: Array<NumberOrDate>) => {
         this.moreThanOrEqual(key, value)
       },
-      between: (from: BetweenValue & T[K], to: BetweenValue & T[K]) => {
-        this.between(key, from, to)
+      between: (...value: Array<BetweenValue & T[K]>) => {
+        this.between(key, value)
       },
-      like: (value: string, config?: LikeConfig) => {
-        this.like(key, value, config)
+      like: (value: string, at: LikeAt = 'strict') => {
+        this.like(key, value, at)
+      },
+      iLike: (value: string, at: LikeAt = 'strict') => {
+        this.iLike(key, value, at)
       },
     }
   }
 
-  set(key: keyof T) {
-    this.clear(key)
+  // set(key: keyof T) {
+  //   this.remove(key)
 
-    return this.add(key)
+  //   return this.set(key)
+  // }
+
+  stringify<K extends keyof T>() {
+    const filters = this.getAll()
+
+    let query: string = ''
+
+    for (let key in filters) {
+      if (filters[key]) {
+        const filter = filters[key] as Filter<T, K>
+
+        if (query !== '') {
+          query += ';'
+        }
+
+        query += key
+
+        let value = filter.value || ''
+
+        if (Array.isArray(filter.value)) {
+          value = formatArrayToQuery(filter.value as Array<T[K]>)
+        }
+
+        query += ':' + value
+
+        if (filter.operator) {
+          query += '$' + filter.operator
+        }
+      }
+    }
+
+    return query ? 'filters=' + query : ''
   }
 
   private equals<K extends keyof T>(key: K, value: Array<T[K]>) {
-    const prevKeyValue = this.genericObject.get(key)?.value || []
-    this.genericObject.add(key, { value: [...prevKeyValue, ...value], operator: 'equals' })
+    this.genericObject.add(key, { value, operator: 'equals' })
   }
 
   private not<K extends keyof T>(key: K, value: Array<T[K]>) {
-    const prevKeyValue = this.genericObject.get(key)?.value || []
-    this.genericObject.add(key, { value: [...prevKeyValue, ...value], operator: 'not' })
+    this.genericObject.add(key, { value, operator: 'not' })
   }
 
-  private isEmpty<K extends keyof T>(key: K, value: EmptyValue) {
-    this.genericObject.add(key, { value, operator: 'isEmpty' })
+  private isEmpty<K extends keyof T>(key: K) {
+    this.genericObject.add(key, { operator: 'isEmpty' })
   }
 
-  private isNotEmpty<K extends keyof T>(key: K, value: EmptyValue) {
-    this.genericObject.add(key, { value, operator: 'isNotEmpty' })
+  private isNotEmpty<K extends keyof T>(key: K) {
+    this.genericObject.add(key, { operator: 'isNotEmpty' })
   }
 
-  private lessThan<K extends keyof T>(key: K, value: NumberOrDate) {
+  private lessThan<K extends keyof T>(key: K, value: Array<NumberOrDate>) {
     this.genericObject.add(key, { value, operator: 'lessThan' })
   }
 
-  private lessThanOrEqual<K extends keyof T>(key: K, value: NumberOrDate) {
+  private lessThanOrEqual<K extends keyof T>(key: K, value: Array<NumberOrDate>) {
     this.genericObject.add(key, { value, operator: 'lessThanOrEqual' })
   }
 
-  private moreThan<K extends keyof T>(key: K, value: NumberOrDate) {
+  private moreThan<K extends keyof T>(key: K, value: Array<NumberOrDate>) {
     this.genericObject.add(key, { value, operator: 'moreThan' })
   }
 
-  private moreThanOrEqual<K extends keyof T>(key: K, value: NumberOrDate) {
+  private moreThanOrEqual<K extends keyof T>(key: K, value: Array<NumberOrDate>) {
     this.genericObject.add(key, { value, operator: 'moreThanOrEqual' })
   }
 
-  private between<K extends keyof T>(key: K, from: BetweenValue & T[K], to: BetweenValue & T[K]) {
+  private between<K extends keyof T>(key: K, value: Array<BetweenValue & T[K]>) {
     this.genericObject.add(key, {
-      from,
-      to,
+      value,
       operator: 'between',
     })
   }
 
-  private like<K extends keyof T>(key: K, value: string, config: LikeConfig = { i: false, at: 'strict' }) {
-    const { i, at = 'strict' } = config
-
+  private like<K extends keyof T>(key: K, value: string, at: LikeAt = 'strict') {
     let operator: string = {
       start: 'like%',
       end: '%like',
@@ -125,9 +179,16 @@ export class Filters<T> {
       strict: 'like',
     }[at]
 
-    if (i) {
-      operator = operator.replace('like', 'iLike')
-    }
+    this.genericObject.add(key, { value, operator })
+  }
+
+  private iLike<K extends keyof T>(key: K, value: string, at: LikeAt = 'strict') {
+    let operator: string = {
+      start: 'iLike%',
+      end: '%iLike',
+      any: '%iLike%',
+      strict: 'iLike',
+    }[at]
 
     this.genericObject.add(key, { value, operator })
   }

@@ -1,3 +1,5 @@
+import { formatRecursiveObject } from "../helpers/keys"
+
 export class Generic<T = Record<string, any>> {
   private obj: Partial<T>
 
@@ -10,7 +12,7 @@ export class Generic<T = Record<string, any>> {
   }
 
   get(key: keyof T): any | undefined {
-    return this.obj[key]
+    return this.obj[key] as T[keyof T]
   }
 
   add(key: keyof T, value: any) {
@@ -27,5 +29,9 @@ export class Generic<T = Record<string, any>> {
 
   clear() {
     this.obj = {}
+  }
+
+  format() {
+    return formatRecursiveObject(this.obj)
   }
 }
