@@ -1,17 +1,35 @@
 import { Generic } from './Generic'
 
-export class SortBy<T = Record<string, any>> {
-  private objGeneric: Generic<T>
+export class SortBy<T extends Record<string, 'ASC' | 'DESC'>> {
+  private genericObject: Generic<T>
 
   constructor(init: Partial<T> = {}) {
-    this.objGeneric = new Generic(init)
+    this.genericObject = new Generic(init)
   }
 
-  set<K extends keyof T>(key: K, value: T[K], operator: 'ASC' | 'DESC') {
-    this.objGeneric.set(key, { value, operator })
+  set<K extends keyof T>(key: K, operator: 'ASC' | 'DESC') {
+    this.genericObject.add(key, operator)
   }
 
-  get<K extends keyof T>(key: K): undefined | { value: T[K]; operator: 'ASC' | 'DESC' } {
-    return this.objGeneric.get(key)
+  remove<K extends keyof T>(key: K) {
+    this.genericObject.remove(key)
+  }
+
+  get(key: keyof T) {
+    return this.genericObject.get(key) as 'ASC' | 'DESC'
+  }
+
+  getAll() {
+    return this.genericObject.getAll()
+  }
+
+  stringify() {
+    return Object.keys(this.getAll()).length
+      ? 'sortBy=' +
+          JSON.stringify(this.getAll())
+            .replace(/"(\w+)":"(\w+)"/g, '$1:$2')
+            .replace(/[{}]/g, '')
+            .replace(/,/g, ';')
+      : ''
   }
 }
