@@ -25,11 +25,10 @@ export class SortBy<T extends Record<string, 'ASC' | 'DESC'>> {
 
   stringify() {
     return Object.keys(this.getAll()).length
-      ? 'sortBy=' +
-          JSON.stringify(this.getAll())
-            .replace(/"(\w+)":"(\w+)"/g, '$1:$2')
-            .replace(/[{}]/g, '')
-            .replace(/,/g, ';')
+      ? JSON.stringify(this.getAll())
+          .replace(/"(\w+)":"(\w+)"/g, '$1:$2')
+          .replace(/[{}]/g, '')
+          .replace(/,/g, ';')
       : ''
   }
 }

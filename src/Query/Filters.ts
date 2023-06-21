@@ -129,7 +129,7 @@ export class Filters<T> {
       }
     }
 
-    return query ? 'filters=' + query : ''
+    return query
   }
 
   private equals<K extends keyof T>(key: K, value: Array<T[K]>) {

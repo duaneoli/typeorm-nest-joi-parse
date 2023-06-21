@@ -22,11 +22,11 @@ export class Query<T> {
     const stringifiedSorter = this.sortBy.stringify()
 
     if (stringifiedSorter) {
-      stringifieds.push(stringifiedSorter)
+      stringifieds.push('sortBy=' + stringifiedSorter)
     }
 
     if (stringifiedFilters) {
-      stringifieds.push(stringifiedFilters)
+      stringifieds.push('filters=' + stringifiedFilters)
     }
 
     const stringified = stringifieds.join('&')
