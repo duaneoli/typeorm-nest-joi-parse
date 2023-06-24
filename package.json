@@ -1,6 +1,6 @@
 {
   "name": "@duaneoli/typeorm-nest-joi-parse",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "author": "Duane Oliveira",
   "description": "Classe para integrar com a biblioteca de back-end @duaneoli/typeorm-nest-joi",
   "main": "dist/index.js",
