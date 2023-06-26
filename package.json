@@ -36,10 +36,11 @@
   "scripts": {
     "prepare": "node -e \"try { require('husky').install() } catch (e) {if (e.code !== 'MODULE_NOT_FOUND') throw e}\"",
     "build": "rm -rf dist/ && tsc",
-    "dev": "ts-node \"src/index.ts\"",
+    "dev": "ts-node src/test/index.ts",
     "lint": "eslint \"{**/*,*}.{js,ts,jsx,tsx}\"",
     "commit": "npx git-cz",
-    "prettier": "prettier --write \"{src,tests,example/src}/**/*.{js,ts,jsx,tsx}\""
+    "prettier": "prettier --write \"{src,tests,example/src}/**/*.{js,ts,jsx,tsx}\"",
+    "publish": "yarn build && npm publish --access public"
   },
   "lint-staged": {
     "*.{js, jsx}": [

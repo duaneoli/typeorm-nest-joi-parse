@@ -34,10 +34,20 @@ export class Query<T> {
     return stringified
   }
 
-  parse() {
+  getAll() {
     return {
       filters: this.filters.format(),
       sortBy: this.sortBy.getAll(),
     }
+  }
+
+  static parse<T>(str: string) {
+    const params = str.split('&')
+    const query = new Query<T>()
+    params.forEach((it) => {
+      if (it.includes('filters')) query.filters = Filters.parse(it.replace('filters=', ''))
+      if (it.includes('sortBy')) query.sortBy = SortBy.parse(it.replace('sortBy=', ''))
+    })
+    return query
   }
 }

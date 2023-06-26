@@ -31,4 +31,14 @@ export class SortBy<T extends Record<string, 'ASC' | 'DESC'>> {
           .replace(/,/g, ';')
       : ''
   }
+
+  static parse<T extends Record<string, 'ASC' | 'DESC'>>(str: string): SortBy<T> {
+    const sortBy = new SortBy<any>()
+    str.split(';').forEach((keyValue) => {
+      const [key, value] = keyValue.split(':')
+      sortBy.set(key, value as any)
+    })
+
+    return sortBy
+  }
 }
