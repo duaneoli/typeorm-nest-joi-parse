@@ -27,6 +27,8 @@ type Operator =
   | 'like%'
   | '%like%'
 
+type CleanedOperator = Exclude<Operator, '%iLike' | 'iLike%' | '%iLike%' | '%like' | 'like%' | '%like%'>
+
 type Filter<T, K extends keyof T> = { value?: Value<T, K>; operator: Operator }
 
 export class Filters<T> {
@@ -128,24 +130,40 @@ export class Filters<T> {
 
   static parse<T>(str: string) {
     const filter = new Filters<T>()
-    str.split(';').forEach((keyValue) => {
-      const [key, value] = keyValue.split(':')
-      const kk = filter.set(key as any)
-      const [v, operator] = value.split('$') as [any, Operator]
-      if (operator === 'equals') kk.equals(...v.split(','))
-      else if (operator === 'not') kk.not(...v.split(','))
-      else if (operator === 'isEmpty') kk.isEmpty()
-      else if (operator === 'isNotEmpty') kk.isNotEmpty()
-      else if (operator === 'lessThan') kk.lessThan(v)
-      else if (operator === 'lessThanOrEqual') kk.lessThanOrEqual(v)
-      else if (operator === 'moreThan') kk.moreThan(v)
-      else if (operator === 'moreThanOrEqual') kk.moreThanOrEqual(v)
-      else if (operator === 'between') kk.between(...v.split(','))
-      else if (operator.replaceAll('%', '') === 'like')
-        kk.like(v, operator[0] === '%' ? (operator[operator.length - 1] === '%' ? 'any' : 'start') : operator[operator.length - 1] === '%' ? 'end' : 'strict')
-      else if (operator.replaceAll('%', '') === 'iLike')
-        kk.iLike(v, operator[0] === '%' ? (operator[operator.length - 1] === '%' ? 'any' : 'start') : operator[operator.length - 1] === '%' ? 'end' : 'strict')
-    })
+
+    const entries = str.split(';')
+
+    for (const entry of entries) {
+      const [key, value] = entry.split(':') as [keyof T, string]
+      const keyToFilter = filter.set(key)
+      const [valueToFilter, operator] = value.split('$') as [any, Operator]
+
+      const cleanedOperator = operator.replaceAll('%', '') as CleanedOperator
+
+      const operators = {
+        equals: () => keyToFilter.equals(...valueToFilter.split(',')),
+        not: () => keyToFilter.not(...valueToFilter.split(',')),
+        isEmpty: () => keyToFilter.isEmpty(),
+        isNotEmpty: () => keyToFilter.isNotEmpty(),
+        lessThan: () => keyToFilter.lessThan(valueToFilter),
+        lessThanOrEqual: () => keyToFilter.lessThanOrEqual(valueToFilter),
+        moreThan: () => keyToFilter.moreThan(valueToFilter),
+        moreThanOrEqual: () => keyToFilter.moreThanOrEqual(valueToFilter),
+        between: () => keyToFilter.between(...valueToFilter.split(',')),
+        like: () => keyToFilter.like(
+          valueToFilter,
+          operator[0] === '%' ? (operator[operator.length - 1] === '%' ? 'any' : 'start') : operator[operator.length - 1] === '%' ? 'end' : 'strict',
+        ),
+        iLike: () => keyToFilter.iLike(
+          valueToFilter,
+          operator[0] === '%' ? (operator[operator.length - 1] === '%' ? 'any' : 'start') : operator[operator.length - 1] === '%' ? 'end' : 'strict',
+        ),
+      }
+
+      if (operators.hasOwnProperty(cleanedOperator)) {
+        operators[cleanedOperator]()
+      }
+    }
 
     return filter
   }

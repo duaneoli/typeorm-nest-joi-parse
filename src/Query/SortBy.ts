@@ -1,13 +1,15 @@
 import { Generic } from './Generic'
 
-export class SortBy<T extends Record<string, 'ASC' | 'DESC'>> {
+type SortOperator = 'ASC' | 'DESC'
+
+export class SortBy<T extends Record<string, SortOperator>> {
   private genericObject: Generic<T>
 
   constructor(init: Partial<T> = {}) {
     this.genericObject = new Generic(init)
   }
 
-  set<K extends keyof T>(key: K, operator: 'ASC' | 'DESC') {
+  set<K extends keyof T>(key: K, operator: SortOperator) {
     this.genericObject.add(key, operator)
   }
 
@@ -16,7 +18,7 @@ export class SortBy<T extends Record<string, 'ASC' | 'DESC'>> {
   }
 
   get(key: keyof T) {
-    return this.genericObject.get(key) as 'ASC' | 'DESC'
+    return this.genericObject.get(key) as SortOperator
   }
 
   getAll() {
@@ -32,12 +34,15 @@ export class SortBy<T extends Record<string, 'ASC' | 'DESC'>> {
       : ''
   }
 
-  static parse<T extends Record<string, 'ASC' | 'DESC'>>(str: string): SortBy<T> {
-    const sortBy = new SortBy<any>()
-    str.split(';').forEach((keyValue) => {
-      const [key, value] = keyValue.split(':')
-      sortBy.set(key, value as any)
-    })
+  static parse<T extends Record<string, SortOperator>>(str: string): SortBy<T> {
+    const sortBy = new SortBy<T>()
+
+    const entries = str.split(';')
+    
+    for (const entry of entries) {
+      const [key, value] = entry.split(':') as [keyof T, SortOperator]
+      sortBy.set(key, value)
+    }
 
     return sortBy
   }

@@ -44,10 +44,12 @@ export class Query<T> {
   static parse<T>(str: string) {
     const params = str.split('&')
     const query = new Query<T>()
-    params.forEach((it) => {
-      if (it.includes('filters')) query.filters = Filters.parse(it.replace('filters=', ''))
-      if (it.includes('sortBy')) query.sortBy = SortBy.parse(it.replace('sortBy=', ''))
-    })
+
+    for (const param of params) {
+      if (param.includes('filters')) query.filters = Filters.parse(param.replace('filters=', ''))
+      if (param.includes('sortBy')) query.sortBy = SortBy.parse(param.replace('sortBy=', ''))
+    }
+
     return query
   }
 }
